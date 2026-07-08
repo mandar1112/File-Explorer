@@ -15,6 +15,7 @@ from controllers.file_operations_controller import FileOperationsController
 from controllers.navigation_controller import NavigationController
 
 from services.file_launcher import FileLauncher
+from services.clipboard_service import ClipboardService
 
 from ui.toolbar import MainToolBar
 from ui.sidebar import SidebarWidget
@@ -36,6 +37,7 @@ class MainWindow(QMainWindow):
         self.file_operations = FileOperationsController(self.file_manager)
         self.navigation = NavigationController()
         self.file_launcher = FileLauncher()
+        self.clipboard = ClipboardService()
         
         # Window
         self.setWindowTitle("File Explorer")
@@ -90,6 +92,8 @@ class MainWindow(QMainWindow):
         
         # Action
         self.actions.open.triggered.connect(self.trigger_open)
+        self.actions.copy.triggered.connect(self.trigger_copy)
+        self.actions.paste.triggered.connect(self.trigger_paste)
         self.actions.properties.triggered.connect(self.trigger_properties)
         self.actions.delete.triggered.connect(self.trigger_delete)
         self.actions.rename.triggered.connect(self.trigger_rename)
@@ -143,6 +147,20 @@ class MainWindow(QMainWindow):
             return
         
         self.on_file_activated(path)
+    
+
+    def trigger_copy(self):
+        paths = self.file_list.selected_paths()
+
+
+        if not paths:
+            return
+        
+        self.clipboard.copy(paths)
+    
+
+    def trigger_paste(self):
+        self.on_paste_requested()
 
         
     def trigger_properties(self):
@@ -257,6 +275,21 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.show_error("Rename Error", str(e))
     
+
+    def on_paste_requested(self):
+        paths = self.clipboard.get_paths()
+
+        if not paths:
+            return
+        
+        operation = self.clipboard.get_operation()
+
+        try:
+            self.file_operations.paste(paths, self.navigation.current_path, operation)
+            self.refresh_current_directory()
+        except Exception as e:
+            self.show_error("Paste Error", str(e))
+
 
     def on_exit_requested(self):
         self.close()

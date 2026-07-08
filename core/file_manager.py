@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from send2trash import send2trash
+import shutil as sh
 
 
 class FileManager:
@@ -24,8 +25,13 @@ class FileManager:
         pass
 
 
-    def copy(self, source, destination):
-        pass
+    def copy(self, source: Path, destination_dir: Path):
+        destination = destination_dir / source.name
+        
+        if source.is_file():
+            sh.copy2(source, destination)
+        else:
+            sh.copytree(source, destination)
 
 
     def create_folder(self, path):

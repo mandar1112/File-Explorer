@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from core.file_manager import FileManager
+from services.clipboard_service import ClipboardOperation
 
 
 class FileOperationsController:
@@ -25,8 +26,13 @@ class FileOperationsController:
         self.file_manager.rename(source, destination)
 
 
-    def copy(self, source, destination):
-        pass
+    def paste(self, sources: list[Path], destination: Path, operation: ClipboardOperation):
+        for source in sources:
+            if operation == ClipboardOperation.COPY:
+                self.file_manager.copy(source, destination)
+            
+            elif operation == ClipboardOperation.CUT:
+                self.file_manager.move(source, destination)
 
 
     def move(self, source, destination):
