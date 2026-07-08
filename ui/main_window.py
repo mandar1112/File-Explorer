@@ -15,7 +15,7 @@ from controllers.file_operations_controller import FileOperationsController
 from controllers.navigation_controller import NavigationController
 
 from services.file_launcher import FileLauncher
-from services.clipboard_service import ClipboardService
+from services.clipboard_service import ClipboardService, ClipboardOperation
 
 from ui.toolbar import MainToolBar
 from ui.sidebar import SidebarWidget
@@ -93,6 +93,7 @@ class MainWindow(QMainWindow):
         # Action
         self.actions.open.triggered.connect(self.trigger_open)
         self.actions.copy.triggered.connect(self.trigger_copy)
+        self.actions.cut.triggered.connect(self.trigger_cut)
         self.actions.paste.triggered.connect(self.trigger_paste)
         self.actions.properties.triggered.connect(self.trigger_properties)
         self.actions.delete.triggered.connect(self.trigger_delete)
@@ -161,6 +162,15 @@ class MainWindow(QMainWindow):
 
     def trigger_paste(self):
         self.on_paste_requested()
+
+
+    def trigger_cut(self):
+        paths = self.file_list.selected_paths()
+
+        if not paths:
+            return
+        
+        self.clipboard.cut(paths)
 
         
     def trigger_properties(self):
@@ -286,6 +296,9 @@ class MainWindow(QMainWindow):
 
         try:
             self.file_operations.paste(paths, self.navigation.current_path, operation)
+            
+            if operation == ClipboardOperation.CUT:
+                self.clipboard.clear()
             self.refresh_current_directory()
         except Exception as e:
             self.show_error("Paste Error", str(e))

@@ -10,7 +10,7 @@ class AddressBar(QLineEdit):
     def __init__(self):
         super().__init__()
 
-        self.setPlaceholderText("Enter Text")
+        self.setPlaceholderText("Enter Path...")
         self.returnPressed.connect(self.on_return_pressed)
 
     

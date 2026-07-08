@@ -21,8 +21,10 @@ class FileManager:
         source.rename(destination)
 
 
-    def move(self, source, destination):
-        pass
+    def move(self, source: Path, destination_dir: Path):
+        destination = destination_dir / source.name
+        sh.move(source , destination)
+        
 
 
     def copy(self, source: Path, destination_dir: Path):
