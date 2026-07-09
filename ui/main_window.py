@@ -360,6 +360,6 @@ class MainWindow(QMainWindow):
         self.refresh_current_directory()   
 
     def on_about_requested(self):
-        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.4\n" "Developed by Mandar Patil\n" "Build with Python and PySide6")
+        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.5\n" "Developed by Mandar Patil\n" "Built with Python and PySide6")
 
 
