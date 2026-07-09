@@ -36,9 +36,9 @@ class FileManager:
             sh.copytree(source, destination)
 
 
-    def create_folder(self, path):
-        pass
+    def create_folder(self, path: Path):
+        path.mkdir()
 
 
     def create_file(self, path):
-        pass
+        path.touch()

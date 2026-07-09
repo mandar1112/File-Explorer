@@ -91,6 +91,8 @@ class MainWindow(QMainWindow):
         self.file_list.contextMenuRequested.connect(self.show_context_menu)
         
         # Action
+        self.actions.new_folder.triggered.connect(self.trigger_new_folder)
+        self.actions.new_file.triggered.connect(self.trigger_new_file)
         self.actions.open.triggered.connect(self.trigger_open)
         self.actions.copy.triggered.connect(self.trigger_copy)
         self.actions.cut.triggered.connect(self.trigger_cut)
@@ -141,9 +143,16 @@ class MainWindow(QMainWindow):
     
     
     # Trigger Event
+    def trigger_new_folder(self):
+        self.on_new_folder_requested()
+
+
+    def trigger_new_file(self):
+        self.on_new_file_requested()
+
+
     def trigger_open(self):
         path = self.file_list.current_path()
-
         if path is None:
             return
         
@@ -152,8 +161,6 @@ class MainWindow(QMainWindow):
 
     def trigger_copy(self):
         paths = self.file_list.selected_paths()
-
-
         if not paths:
             return
         
@@ -166,7 +173,6 @@ class MainWindow(QMainWindow):
 
     def trigger_cut(self):
         paths = self.file_list.selected_paths()
-
         if not paths:
             return
         
@@ -175,7 +181,6 @@ class MainWindow(QMainWindow):
         
     def trigger_properties(self):
         path = self.file_list.current_path()
-
         if path is None:
             return
         
@@ -184,7 +189,6 @@ class MainWindow(QMainWindow):
 
     def trigger_delete(self):
         paths = self.file_list.selected_paths()
-
         if not paths:
             return
         
@@ -193,7 +197,6 @@ class MainWindow(QMainWindow):
 
     def trigger_rename(self):
         path = self.file_list.current_path()
-
         if path is None:
             return
         
@@ -252,6 +255,51 @@ class MainWindow(QMainWindow):
         
         self.file_launcher.open(path)
     
+
+    def on_new_folder_requested(self):
+        folder_name, ok = QInputDialog.getText(self, "New Folder", "Folder Name: ")
+
+        if not ok:
+            return
+        
+        folder_name = folder_name.strip()
+        if not folder_name:
+            return
+        
+        folder_path = self.navigation.current_path / folder_name
+
+        if folder_path.exists():
+            self.show_error("New Folder", "A folder with that name already exists.")
+            return
+
+        try:
+            self.file_operations.create_folder(folder_path)
+            self.refresh_current_directory()
+        except Exception as e:
+            self.show_error("New Folder Error", str(e))
+    
+
+    def on_new_file_requested(self):
+        file_name, ok = QInputDialog.getText(self, "New File", "File Name:")
+        if not ok:
+            return
+        
+        file_name = file_name.strip()
+        if not file_name:
+            return
+        
+        file_path = self.navigation.current_path / file_name
+
+        if file_path.exists():
+            self.show_error("New File", "A file or folder with that name already exists.")
+            return
+
+        try:
+            self.file_operations.create_file(file_path)
+            self.refresh_current_directory()
+        except Exception as e:
+            self.show_error("New File Error", str(e))
+
 
     def on_delete_requested(self, paths):
         reply = QMessageBox.question(self, "Delete", f"Delete {len(paths)} item(s)?", QMessageBox.Yes | QMessageBox.No)

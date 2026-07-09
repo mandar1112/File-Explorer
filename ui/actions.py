@@ -28,6 +28,11 @@ class ApplicationActions:
 
 
     def create_file_actions(self):
+        self.new_folder = QAction("New Folder", self.parent)
+        self.new_folder.setShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT | Qt.Key_N))
+
+        self.new_file = QAction("New File", self.parent)
+
         self.rename = QAction("Rename", self.parent)
         self.rename.setShortcut(QKeySequence(Qt.Key_F2))
         

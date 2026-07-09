@@ -18,6 +18,9 @@ class MainMenuBar(QMenuBar):
     
     def create_file_menu(self):
         file_menu = self.addMenu("File")
+        file_menu.addAction(self.actions.new_folder)
+        file_menu.addAction(self.actions.new_file)
+        file_menu.addSeparator()
         file_menu.addAction(self.actions.rename)
         file_menu.addAction(self.actions.delete)
         file_menu.addSeparator()

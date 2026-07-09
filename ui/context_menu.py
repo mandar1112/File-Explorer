@@ -14,6 +14,8 @@ class FileContextMenu(QMenu):
 
     def build_menu(self):
         self.addAction(self.actions.open)
+        self.addAction(self.actions.new_folder)
+        self.addAction(self.actions.new_file)
         
         self.addSeparator()
         

@@ -37,3 +37,11 @@ class FileOperationsController:
 
     def move(self, source, destination):
         pass
+
+
+    def create_folder(self, path: Path):
+        self.file_manager.create_folder(path)
+
+
+    def create_file(self, path: Path):
+        self.file_manager.create_file(path)
