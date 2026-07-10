@@ -10,7 +10,7 @@ class FileManager:
         folder = Path(path)
         if not folder.exists():
             return []
-        return list(folder.iterdir())
+        return sorted(folder.iterdir(), key= lambda p: (p.is_file(), p.name.lower()))
 
 
     def delete(self, path: Path):

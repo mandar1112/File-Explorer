@@ -18,7 +18,9 @@ from services.icon_service import IconService
 class FileListView(QListWidget):
 
     fileActivated = Signal(Path)
-    contextMenuRequested = Signal(QPoint)
+    fileContextMenuRequested = Signal(object)
+    backgroundContextMenuRequested = Signal(object)
+    selectionInfoChanged = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -28,6 +30,7 @@ class FileListView(QListWidget):
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu_requested)
+        self.itemSelectionChanged.connect(self.on_selection_changed)
 
     
     def show_files(self, files):
@@ -66,10 +69,16 @@ class FileListView(QListWidget):
     
 
     def on_context_menu_requested(self, position):
+        global_position = self.viewport().mapToGlobal(position)
+
         item = self.itemAt(position)
 
         if item:
             self.setCurrentItem(item)
-        
-        self.contextMenuRequested.emit(self.viewport().mapToGlobal(position))
+            self.fileContextMenuRequested.emit(global_position)
+        else:
+            self.backgroundContextMenuRequested.emit(global_position)
+    
 
+    def on_selection_changed(self):
+        self.selectionInfoChanged.emit(self.selected_paths())

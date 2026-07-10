@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QMenu
 
 
-class FileContextMenu(QMenu):
+class BackgroundContextMenu(QMenu):
 
     def __init__(self, actions):
         super().__init__()
@@ -13,18 +13,13 @@ class FileContextMenu(QMenu):
     
 
     def build_menu(self):
-        self.addAction(self.actions.open)
-
-        self.addSeparator()
-
-        self.addAction(self.actions.copy)
-        self.addAction(self.actions.cut)
+        new_menu = self.addMenu("New")
+        new_menu.addAction(self.actions.new_folder)
+        new_menu.addAction(self.actions.new_file)
         
         self.addSeparator()
-        
-        self.addAction(self.actions.rename)
-        self.addAction(self.actions.delete)
-        
+        self.addAction(self.actions.paste)
         self.addSeparator()
-
+        self.addAction(self.actions.refresh)
+        self.addSeparator()
         self.addAction(self.actions.properties)

@@ -1,4 +1,5 @@
 
+import shutil
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -23,8 +24,12 @@ from ui.menu_bar import MainMenuBar
 from ui.address_bar import AddressBar
 from ui.status_bar import MainStatusBar
 from ui.context_menu import FileContextMenu
+from ui.background_context_menu import BackgroundContextMenu
 from ui.actions import ApplicationActions
 from ui.views.file_list import FileListView
+from ui.dialogs.properties_dialog import PropertiesDialog
+
+from utils.formatters import format_size
 
 
 
@@ -65,6 +70,7 @@ class MainWindow(QMainWindow):
         self.address_bar = AddressBar()
         self.status_bar = MainStatusBar()
         self.context_menu = FileContextMenu(self.actions)
+        self.background_context_menu = BackgroundContextMenu(self.actions)
 
 
     def build_ui(self):
@@ -87,8 +93,10 @@ class MainWindow(QMainWindow):
         self.sidebar.locationSelected.connect(self.on_sidebar_location_selected)
 
         # File List
+        self.file_list.selectionInfoChanged.connect(self.on_selection_changed)
         self.file_list.fileActivated.connect(self.on_file_activated)
-        self.file_list.contextMenuRequested.connect(self.show_context_menu)
+        self.file_list.fileContextMenuRequested.connect(self.show_file_context_menu)
+        self.file_list.backgroundContextMenuRequested.connect(self.show_background_context_menu)
         
         # Action
         self.actions.new_folder.triggered.connect(self.trigger_new_folder)
@@ -120,10 +128,21 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(right_layout)
     
 
-    def show_context_menu(self, position):
+    def show_file_context_menu(self, position):
         paths = self.file_list.selected_paths()        
-        self.actions.rename.setEnabled(len(paths) == 1)
+        has_selection = len(paths) > 0
+        self.actions.copy.setEnabled(has_selection)
+        self.actions.cut.setEnabled(has_selection)
+        self.actions.delete.setEnabled(has_selection)
+        self.actions.properties.setEnabled(has_selection)
         self.context_menu.exec(position)
+    
+
+    def show_background_context_menu(self, position):
+        has_clipboard = bool(self.clipboard.get_paths())
+        self.actions.paste.setEnabled(has_clipboard)
+        self.actions.properties.setEnabled(False)
+        self.background_context_menu.exec(position)
 
 
     def update_navigation(self, path, add_to_history):
@@ -140,8 +159,18 @@ class MainWindow(QMainWindow):
         self.address_bar.setText(str(path))
         files = self.file_manager.list_directory(path)
         self.file_list.show_files(files)
+        self.status_bar.show_selection(total_items=len(files))
+        self.update_disk_space()
     
     
+    def update_disk_space(self):
+        usage = shutil.disk_usage(self.navigation.current_path)
+
+        free_space = format_size(usage.free)
+
+        self.status_bar.show_disk_space(free_space)
+
+
     # Trigger Event
     def trigger_new_folder(self):
         self.on_new_folder_requested()
@@ -184,7 +213,8 @@ class MainWindow(QMainWindow):
         if path is None:
             return
         
-        print(path)
+        properties_dialog = PropertiesDialog(path)
+        properties_dialog.exec()
 
 
     def trigger_delete(self):
@@ -196,11 +226,11 @@ class MainWindow(QMainWindow):
 
 
     def trigger_rename(self):
-        path = self.file_list.current_path()
-        if path is None:
+        paths = self.file_list.selected_paths()
+        if len(paths) != 1:
             return
         
-        self.on_rename_requested(path)
+        self.on_rename_requested(paths[0])
 
     
     def trigger_exit(self):
@@ -246,6 +276,24 @@ class MainWindow(QMainWindow):
 
     def show_error(self, title, message):
         QMessageBox.critical(self, title, message)
+
+
+    def on_selection_changed(self, paths):
+        total_items = self.file_list.count()
+        selected_items = len(paths)
+        
+        selected_size = 0
+
+        for path in paths:
+            if path.is_file():
+                selected_size += path.stat().st_size
+        
+        size_text = None
+
+        if selected_size:
+            size_text = format_size(selected_size)
+        
+        self.status_bar.show_selection(total_items, selected_items, size_text)
 
 
     def on_file_activated(self, path: Path):
@@ -359,7 +407,8 @@ class MainWindow(QMainWindow):
     def on_refresh_requested(self):
         self.refresh_current_directory()   
 
+
     def on_about_requested(self):
-        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.5\n" "Developed by Mandar Patil\n" "Built with Python and PySide6")
+        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.6\n" "Developed by Mandar Patil\n" "Built with Python and PySide6")
 
 
