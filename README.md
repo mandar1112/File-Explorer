@@ -113,6 +113,9 @@ Under active development.
 - Better Clipboard Handling
 - Utility module ('utils')
 
+### v0.7
+- Search Bar
+
 
 
 

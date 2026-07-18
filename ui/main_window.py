@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from core.file_manager import FileManager
 from controllers.file_operations_controller import FileOperationsController
 from controllers.navigation_controller import NavigationController
+from controllers.search_controller import SearchController
 
 from services.file_launcher import FileLauncher
 from services.clipboard_service import ClipboardService, ClipboardOperation
@@ -23,6 +24,7 @@ from ui.sidebar import SidebarWidget
 from ui.menu_bar import MainMenuBar
 from ui.address_bar import AddressBar
 from ui.status_bar import MainStatusBar
+from ui.search_bar import SearchBar
 from ui.context_menu import FileContextMenu
 from ui.background_context_menu import BackgroundContextMenu
 from ui.actions import ApplicationActions
@@ -43,13 +45,14 @@ class MainWindow(QMainWindow):
         self.navigation = NavigationController()
         self.file_launcher = FileLauncher()
         self.clipboard = ClipboardService()
+        self.search = SearchController()
+        self.actions = ApplicationActions(self)
         
         # Window
         self.setWindowTitle("File Explorer")
         self.resize(1200, 700)
 
         # UI Components
-        self.actions = ApplicationActions(self)
         self.create_components()
 
         # Build UI
@@ -58,8 +61,11 @@ class MainWindow(QMainWindow):
         # Connect Signals
         self.connect_signals()
 
+        self.current_files = []
+
         # Load Initial Directory
-        self.display_directory(".")
+        self.display_directory(Path.cwd())
+
 
 
     def create_components(self):
@@ -69,6 +75,7 @@ class MainWindow(QMainWindow):
         self.menu_bar = MainMenuBar(self.actions)
         self.address_bar = AddressBar()
         self.status_bar = MainStatusBar()
+        self.search_bar = SearchBar()
         self.context_menu = FileContextMenu(self.actions)
         self.background_context_menu = BackgroundContextMenu(self.actions)
 
@@ -92,6 +99,10 @@ class MainWindow(QMainWindow):
         # Sidebar
         self.sidebar.locationSelected.connect(self.on_sidebar_location_selected)
 
+        # Search Bar
+        self.search_bar.searchTextChanged.connect(self.on_search_changed)
+        self.search_bar.escapePressed.connect(self.on_search_escape)
+
         # File List
         self.file_list.selectionInfoChanged.connect(self.on_selection_changed)
         self.file_list.fileActivated.connect(self.on_file_activated)
@@ -110,6 +121,7 @@ class MainWindow(QMainWindow):
         self.actions.rename.triggered.connect(self.trigger_rename)
         self.actions.exit.triggered.connect(self.trigger_exit)
         self.actions.refresh.triggered.connect(self.trigger_refresh)
+        self.actions.search.triggered.connect(self.focus_search_bar)
         self.actions.about.triggered.connect(self.trigger_about)
 
 
@@ -121,7 +133,15 @@ class MainWindow(QMainWindow):
         central.setLayout(main_layout)
 
         right_layout = QVBoxLayout()
-        right_layout.addWidget(self.address_bar)
+
+        # Top Row
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(self.address_bar, 3)
+        top_layout.addWidget(self.search_bar, 1)
+        top_layout.setSpacing(6)
+        self.search_bar.setMinimumWidth(250)
+
+        right_layout.addLayout(top_layout)
         right_layout.addWidget(self.file_list)
 
         main_layout.addWidget(self.sidebar)
@@ -157,9 +177,8 @@ class MainWindow(QMainWindow):
     def display_directory(self, path, add_to_history=True):
         path = self.update_navigation(path, add_to_history)
         self.address_bar.setText(str(path))
-        files = self.file_manager.list_directory(path)
-        self.file_list.show_files(files)
-        self.status_bar.show_selection(total_items=len(files))
+        self.current_files = self.file_manager.list_directory(path)
+        self.apply_search()
         self.update_disk_space()
     
     
@@ -272,6 +291,7 @@ class MainWindow(QMainWindow):
     # File Events
     def refresh_current_directory(self):
         self.display_directory(self.navigation.current_path, add_to_history=False)
+        self.apply_search()
 
 
     def show_error(self, title, message):
@@ -302,6 +322,14 @@ class MainWindow(QMainWindow):
             return
         
         self.file_launcher.open(path)
+    
+
+    def focus_search_bar(self):
+        self.search_bar.setFocus()
+
+    
+    def focus_file_list(self):
+        self.file_list.setFocus()
     
 
     def on_new_folder_requested(self):
@@ -400,6 +428,15 @@ class MainWindow(QMainWindow):
             self.show_error("Paste Error", str(e))
 
 
+    def on_search_changed(self, text):
+        self.apply_search()
+
+
+    def on_search_escape(self):
+        self.search_bar.clear()
+        self.file_list.setFocus()
+
+
     def on_exit_requested(self):
         self.close()
     
@@ -409,6 +446,15 @@ class MainWindow(QMainWindow):
 
 
     def on_about_requested(self):
-        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.6\n" "Developed by Mandar Patil\n" "Built with Python and PySide6")
+        QMessageBox.about(self, "About Explorer", "Explorer\n\n" "Version: 0.7\n" "Developed by Mandar Patil\n" "Built with Python, PySide6 and Pathlib")
+
+
+    def apply_search(self):
+        query = self.search_bar.text()
+
+        filtered_files = self.search.filter_files(self.current_files, query)
+        self.file_list.show_files(filtered_files)
+        self.status_bar.show_selection(total_items=len(filtered_files))
+
 
 

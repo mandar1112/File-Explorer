@@ -16,6 +16,11 @@ class ApplicationActions:
         self.create_help_actions()
 
     
+    def shortcut_actions(self):
+        self.search = QAction("Search", parent)
+        self.search.setShortcut("Ctrl+F")
+        self.search.setStatusTip("Selected Search Bar")
+
     def create_navigation_actions(self):
         self.back = QAction("←", self.parent)
         self.forward = QAction("→", self.parent)
