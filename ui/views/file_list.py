@@ -1,16 +1,23 @@
 
+from dataclasses import dataclass
+from pathlib import Path
+
+from PySide6.QtCore import Qt, Signal, QMimeData, QUrl
+from PySide6.QtGui import (
+    QDrag,
+    QDragEnterEvent,
+    QDragLeaveEvent,
+    QDragMoveEvent,
+    QDropEvent
+)
 from PySide6.QtWidgets import (
     QListWidget, 
     QListWidgetItem,
     QAbstractItemView
 )
-from PySide6.QtCore import (
-    Qt, 
-    Signal
-)
 
-from pathlib import Path
 from services.icon_service import IconService
+from ui.events import DropRequested
 
 
 
@@ -21,18 +28,35 @@ class FileListView(QListWidget):
     backgroundContextMenuRequested = Signal(object)
     selectionInfoChanged = Signal(list)
 
+    # sources, destination
+    dropRequested = Signal(DropRequested)
+
     def __init__(self):
         super().__init__()
 
+        self.current_directory: Path | None = None
+
         self.icon_service = IconService()
+
         self.itemDoubleClicked.connect(self.on_item_double_clicked)
+        self.itemSelectionChanged.connect(self.on_selection_changed)
+        
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu_requested)
-        self.itemSelectionChanged.connect(self.on_selection_changed)
+
+        # Drag and Drop permissions
+        self._hovered_drop_target: Path | None = None
+
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDefaultDropAction(Qt.MoveAction)
 
     
-    def show_files(self, files):
+    def show_files(self, directory: Path, files: list[Path]):
+        self.current_directory = directory
         self.clear()
         
         for file in files:
@@ -43,8 +67,7 @@ class FileListView(QListWidget):
     
 
     def on_item_double_clicked(self, item):
-        path = item.data(Qt.UserRole)
-        self.fileActivated.emit(path)
+        self.fileActivated.emit(item.data(Qt.UserRole))
     
 
     def selected_paths(self) -> list[Path]:
@@ -81,3 +104,88 @@ class FileListView(QListWidget):
 
     def on_selection_changed(self):
         self.selectionInfoChanged.emit(self.selected_paths())
+
+
+    def get_drop_destination(self, position) -> Path | None:
+        item = self.itemAt(position)
+
+        if item is None:
+            return self.current_directory
+        
+        destination = item.data(Qt.UserRole)
+
+        if destination.is_dir():
+            return destination
+        
+        return None
+
+    
+    # Drag and Drop
+    def startDrag(self, supportedAction: Qt.DropAction) -> None:
+        paths = self.selected_paths()
+
+        if not paths:
+            return
+        
+        mime_data = QMimeData()
+        urls = [QUrl.fromLocalFile(str(path)) for path in paths]
+        mime_data.setUrls(urls)
+
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+
+        drag.exec(Qt.CopyAction | Qt.MoveAction, Qt.MoveAction)
+
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+    
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        destination = self.get_drop_destination(event.position().toPoint())
+        
+        if destination is None:
+            event.ignore()
+            return
+        
+        if destination != self._hovered_drop_target:
+            self._hovered_drop_target = destination
+
+        event.accept()
+
+    
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self._hovered_drop_target = None
+        event.accept()
+    
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        destination = self.get_drop_destination(event.position().toPoint())
+        
+        if destination is None:
+            event.ignore()
+            return
+        
+        sources = [
+            Path(url.toLocalFile()) 
+            for url in event.mimeData().urls()
+        ]
+
+        # Ignore if every source is already in destination
+        if all(source.parent == destination for source in sources):
+            event.ignore()
+            return
+
+        request = DropRequested(
+            sources=sources, 
+            destination=destination, 
+            action=event.dropAction()
+        )
+        self.dropRequested.emit(request)
+        
+        self._hovered_drop_target = None
+        event.accept()
+    

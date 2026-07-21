@@ -44,6 +44,20 @@ class MainStatusBar(QStatusBar):
         self.info_label.setText(message)
     
 
+    def show_search_result(self, *, shown: int, total: int, selected_items: int = 0, selected_size: str | None = None) -> None:
+        item_text = "item" if total == 1 else "items"
+        message = f"Showing {shown} of {total} {item_text}"
+
+        if selected_items > 0:
+            message += f"  |  {selected_items} selected"
+        
+        if selected_size:
+            message += f"  |  {selected_size}"
+
+        self.info_label.setText(message)
+
+    
+
     def show_disk_space(self, free_space: str):
         self.disk_label.setText(f"Free: {free_space}")
     

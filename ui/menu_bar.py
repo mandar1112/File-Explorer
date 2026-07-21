@@ -34,6 +34,7 @@ class MainMenuBar(QMenuBar):
         edit_menu.addAction(self.actions.paste)
         edit_menu.addSeparator()
         edit_menu.addAction(self.actions.select_all)
+        edit_menu.addAction(self.actions.search)
 
 
     def create_view_menu(self):

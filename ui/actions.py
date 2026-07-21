@@ -17,9 +17,10 @@ class ApplicationActions:
 
     
     def shortcut_actions(self):
-        self.search = QAction("Search", parent)
+        self.search = QAction("Search", self.parent)
         self.search.setShortcut("Ctrl+F")
         self.search.setStatusTip("Selected Search Bar")
+
 
     def create_navigation_actions(self):
         self.back = QAction("←", self.parent)
@@ -52,11 +53,13 @@ class ApplicationActions:
         self.cut = QAction("Cut", self.parent)
         self.paste = QAction("Paste", self.parent)
         self.select_all = QAction("Select All", self.parent)
-
+        self.search = QAction("Search", self.parent)
+        
         self.copy.setShortcut(QKeySequence.Copy)
         self.cut.setShortcut(QKeySequence.Cut)
         self.paste.setShortcut(QKeySequence.Paste)
         self.select_all.setShortcut(QKeySequence.SelectAll)
+        self.search.setShortcut(QKeySequence.StandardKey.Find)
     
 
     def create_view_actions(self):

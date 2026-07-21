@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QInputDialog
 )
+from PySide6.QtCore import Qt
 
 from core.file_manager import FileManager
 from controllers.file_operations_controller import FileOperationsController
@@ -29,6 +30,7 @@ from ui.context_menu import FileContextMenu
 from ui.background_context_menu import BackgroundContextMenu
 from ui.actions import ApplicationActions
 from ui.views.file_list import FileListView
+from ui.events import DropRequested
 from ui.dialogs.properties_dialog import PropertiesDialog
 
 from utils.formatters import format_size
@@ -98,6 +100,7 @@ class MainWindow(QMainWindow):
 
         # Sidebar
         self.sidebar.locationSelected.connect(self.on_sidebar_location_selected)
+        self.sidebar.dropRequested.connect(self.on_drop_requested)
 
         # Search Bar
         self.search_bar.searchTextChanged.connect(self.on_search_changed)
@@ -108,6 +111,7 @@ class MainWindow(QMainWindow):
         self.file_list.fileActivated.connect(self.on_file_activated)
         self.file_list.fileContextMenuRequested.connect(self.show_file_context_menu)
         self.file_list.backgroundContextMenuRequested.connect(self.show_background_context_menu)
+        self.file_list.dropRequested.connect(self.on_drop_requested)
         
         # Action
         self.actions.new_folder.triggered.connect(self.trigger_new_folder)
@@ -299,7 +303,8 @@ class MainWindow(QMainWindow):
 
 
     def on_selection_changed(self, paths):
-        total_items = self.file_list.count()
+        total_items = len(self.current_files)
+        shown_items = self.file_list.count()
         selected_items = len(paths)
         
         selected_size = 0
@@ -313,7 +318,10 @@ class MainWindow(QMainWindow):
         if selected_size:
             size_text = format_size(selected_size)
         
-        self.status_bar.show_selection(total_items, selected_items, size_text)
+        if self.search_bar.text():
+            self.status_bar.show_search_result(shown=shown_items, total=total_items, selected_items=selected_items, selected_size=size_text)
+        else:
+            self.status_bar.show_selection(total_items=total_items,selected_items=selected_items, selected_size=size_text)
 
 
     def on_file_activated(self, path: Path):
@@ -442,7 +450,21 @@ class MainWindow(QMainWindow):
     
 
     def on_refresh_requested(self):
-        self.refresh_current_directory()   
+        self.refresh_current_directory()
+
+
+    # Drag Requested
+    def on_drop_requested(self, request: DropRequested) -> None:
+
+        if request.action == Qt.CopyAction:
+            failed = self.file_operations.copy_items(request.sources, request.destination)
+        else:
+            failed = self.file_operations.move_items(request.sources, request.destination)
+        
+        if failed:
+            print(failed)
+            
+        self.refresh_current_directory()  
 
 
     def on_about_requested(self):
@@ -453,8 +475,11 @@ class MainWindow(QMainWindow):
         query = self.search_bar.text()
 
         filtered_files = self.search.filter_files(self.current_files, query)
-        self.file_list.show_files(filtered_files)
-        self.status_bar.show_selection(total_items=len(filtered_files))
-
+        self.file_list.show_files(self.navigation.current_path, filtered_files)
+        
+        if query:
+            self.status_bar.show_search_result(shown=len(filtered_files), total=len(self.current_files))
+        else:
+            self.status_bar.show_selection(total_items=len(self.current_files))
 
 

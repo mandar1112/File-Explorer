@@ -1,7 +1,7 @@
 
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QLineEdit
+from PySide6.QtGui import QKeyEvent, QAction
+from PySide6.QtWidgets import QLineEdit, QStyle
 
 
 class SearchBar(QLineEdit):
