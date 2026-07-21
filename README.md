@@ -1,6 +1,6 @@
 # File Explorer
 
-A modern File Explorer built with Python and PySide6.
+A modern File Explorer built with *Python* and *PySide6*, featuring a modular MVC-inspired architecture.
 
 
 ## Features
@@ -15,10 +15,10 @@ A modern File Explorer built with Python and PySide6.
 
 ### File Operations
 - Open files and folders
-- Create new folder
-- Create new file
-- Rename files and folders
-- Delete files and folders
+- Create folder
+- Create file
+- Rename
+- Delete
 - Copy
 - Cut
 - Paste
@@ -34,7 +34,7 @@ A modern File Explorer built with Python and PySide6.
 - About Dialog
 
 ### Architecture
-- Modular MVC-inspired architecture
+- MVC-inspired architecture
 - Controllers
 - Services
 - Reusable Dialogs
@@ -57,7 +57,7 @@ A modern File Explorer built with Python and PySide6.
 
 
 ## Project Structure
-
+```text
 File-Explorer/
 |
 |-- controller/
@@ -71,11 +71,14 @@ File-Explorer/
 |
 |-- main.py
 |__ README.md
+```
 
 
 ## Status
 
 Under active development.
+
+Current Milestone: **v0.8 - Drag and Drop**
 
 
 
@@ -116,6 +119,10 @@ Under active development.
 ### v0.7
 - Search Bar
 
+### v0.8
+- Drag & Drop
+- Ctrl + Drag = Copy
+
 
 
 
@@ -124,3 +131,4 @@ Under active development.
 This project is currently developed for learning and portfolio purposes.
 
 Developed By *Mandar Patil*.
+© 2026 Mandar Patil
